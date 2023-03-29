@@ -1,4 +1,3 @@
-single/pan*
-single/*.tmp
-multi/pan*
-multi/*.tmp
+pan*
+*.tmp
+*.trail
