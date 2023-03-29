@@ -11,6 +11,8 @@ ltl p2 { []<> (cabin_door_is_open==true) } /* this property should hold, but doe
 // the number of floors
 #define N	4
 
+ltl p4 { []<>((floor_request_made[0]> 0) && (floor_request_made[1] < N))}
+
 // IDs of req_button processes
 #define reqid _pid-4
 
@@ -108,5 +110,5 @@ active [N] proctype req_button() {
 		floor_request_made[reqid] = true;
 	   }
 	od;
-	ltl p3 { []<> (floor_request_made[reqid] == true -> floor_request_made[reqid] == false)}  /* always eventually if a request is being made it's being honored */
+	/*ltl p3 { always (eventually (floor_request_made[0] == true)) implies (eventually (floor_request_made[0] == false))  } /* always eventually if a request is being made it's being honored */
 }
