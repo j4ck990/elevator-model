@@ -94,9 +94,9 @@ active proctype req_handler() {
 active [N] proctype req_button() {
 	do
 	:: !floor_request_made[reqid] ->
-	   atomic {
+	  atomic {
 		request!reqid;
 		floor_request_made[reqid] = true;
-	   }
+	  }
 	od;
 }

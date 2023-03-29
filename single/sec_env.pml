@@ -5,11 +5,16 @@
 
 // LTL formulas to be verified
 //ltl p1 { []<> (floor_request_made[1]==true) } /* this property does not hold, as a request for floor 1 can be indefinitely postponed. */
-ltl p2 { []<> (cabin_door_is_open==true) } /* this property should hold, but does not yet; at any moment during an execution, the opening of the cabin door will happen at some later point. */
+ltl a1 { [] ((floor_request_made[1]) -> <>(floor_door_is_open[1])) }
+// ltl a2 { [] ((floor_request_made[2]) -> <>(floor_door_is_open[2])) }
+// ltl b1 { []<> (cabin_door_is_open==true) } /* this property should hold, but does not yet; at any moment during an execution, the opening of the cabin door will happen at some later point. */
+// ltl b2 { []<> (cabin_door_is_open==false) } /* this property should hold, but does not yet; at any moment during an execution, the closing of the cabin door will happen at some later point. */
+// ltl c { [] (cabin_door_is_open -> floor_door_is_open[current_floor]) }
+// ltl d { [] (n==4) }
 
 // the number of floors
 #define N	4
-
+#define n (4)
 // IDs of req_button processes
 #define reqid _pid-4
 
@@ -46,6 +51,7 @@ active proctype cabin_door() {
 	:: update_cabin_door?false -> 
 		cabin_door_is_open = false; 
 		floor_door_is_open[current_floor] = false; 
+		// assert(cabin_door_is_open==floor_door_is_open[current_floor]); // assert floor door is open when cabin door is open
 		cabin_door_updated!false;
 	od;
 }
@@ -56,7 +62,7 @@ active proctype elevator_engine() {
 	:: move?true ->
 		do
 		:: move?false -> break;
-		:: floor_reached!true;
+		f: :: floor_reached!true;
 		od;
 	od;
 }
@@ -102,9 +108,9 @@ active proctype req_handler() {
 active [N] proctype req_button() {
 	do
 	:: !floor_request_made[reqid] ->
-	   atomic {
+	  atomic {
 		request!reqid;
 		floor_request_made[reqid] = true;
-	   }
+	  }
 	od;
 }
