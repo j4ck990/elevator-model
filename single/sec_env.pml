@@ -7,6 +7,7 @@
 //ltl p1 { []<> (floor_request_made[1]==true) } /* this property does not hold, as a request for floor 1 can be indefinitely postponed. */
 ltl p2 { []<> (cabin_door_is_open==true) } /* this property should hold, but does not yet; at any moment during an execution, the opening of the cabin door will happen at some later point. */
 
+
 // the number of floors
 #define N	4
 
@@ -78,7 +79,7 @@ active proctype main_control() {
 
 	  // an example assertion.
 	  assert(0 <= current_floor && current_floor < N);
-		assert(cabin_door_is_open == false);
+	  assert(cabin_door_is_open == false);
 
 		move!true;
 		floor_reached?true; -> move!false;
@@ -107,4 +108,5 @@ active [N] proctype req_button() {
 		floor_request_made[reqid] = true;
 	   }
 	od;
+	ltl p3 { []<> (floor_request_made[reqid] == true -> floor_request_made[reqid] == false)}  /* always eventually if a request is being made it's being honored */
 }
