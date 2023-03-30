@@ -79,17 +79,26 @@ active proctype main_control() {
 		update_cabin_door!false; cabin_door_updated?false -> 
 		current_floor = dest;
 
-	  // an example assertion.
-	  assert(0 <= current_floor && current_floor < N);
-	  assert(cabin_door_is_open == false);
-
+	  	// an example assertion.
+	  	assert(0 <= current_floor && current_floor < N);
+	  	assert(cabin_door_is_open == false);
+		/* there should be a channel check here maybe*/
 		move!true;
-		floor_reached?true; -> move!false;
+		do
+            :: if
+               :: floor_reached?false -> skip;
+               :: floor_reached?true -> break;
+               fi;
+         od;
+         atomic {
+            move!false;
+            direction = none;
+         }
 
-		update_cabin_door!true; cabin_door_updated?true;
+		update_cabin_door!true; 
+		cabin_door_updated?true -> floor_request_made[dest] = false; 
+		served!true;
 
-	  floor_request_made[dest] = false;
-	  served!true;
 	od;
 }
 
@@ -99,6 +108,7 @@ active proctype req_handler() {
 	do
 	:: request?dest -> go!dest; served?true;
 	od;
+	
 }
 
 // request button associated to a floor i to request an elevator
