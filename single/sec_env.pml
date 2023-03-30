@@ -5,11 +5,13 @@
 
 // LTL formulas to be verified
 //ltl p1 { []<> (floor_request_made[1]==true) } /* this property does not hold, as a request for floor 1 can be indefinitely postponed. */
+// ltl p4 { []<>((floor_request_made[0]> 0) && (floor_request_made[1] < N))}
+// ltl p5 { [] ((cabin_door_is_open == true) && (cabin_door_is_open == false))}
 // ltl a1 { [] ((floor_request_made[1]) -> <>(floor_door_is_open[1])) }
 // ltl a2 { [] ((floor_request_made[2]) -> <>(floor_door_is_open[2])) }
 // ltl b1 { []<> (cabin_door_is_open==true) } /* this property should hold, but does not yet; at any moment during an execution, the opening of the cabin door will happen at some later point. */
 // ltl b2 { []<> (cabin_door_is_open==false) } /* this property should hold, but does not yet; at any moment during an execution, the closing of the cabin door will happen at some later point. */
-ltl c { [] (cabin_door_is_open -> floor_door_is_open[current_floor]) }
+// ltl c { [] (cabin_door_is_open -> floor_door_is_open[current_floor]) }
 
 // the number of floors
 #define N	4
@@ -75,23 +77,34 @@ active proctype main_control() {
 		if
 		:: dest < current_floor -> direction = down;
 		:: dest > current_floor -> direction = up;
-		:: else -> direction = none;
+		:: else -> skip;
 		fi
 		
 		if
 		:: cabin_door_is_open -> update_cabin_door!false; cabin_door_updated?false;
-		:: else -> skip
+		:: else -> skip;
 		fi
-		current_floor = dest;
 
 	  // an example assertion.
 	  assert(0 <= current_floor && current_floor < N);
 		assert(cabin_door_is_open == false);
 
 		move!true;
-		floor_reached?true; -> move!false;
-		direction = none;
+		do
+		:: current_floor != dest ->
+			if
+			:: direction == up ->
+				current_floor++;
+				floor_reached?true;
+			:: direction == down ->
+				current_floor--;
+				floor_reached?true;
+			fi
+		:: current_floor == dest -> break;
+		od
+		move!false;
 
+		direction = none;
 		update_cabin_door!true; cabin_door_updated?true;
 
 	  floor_request_made[dest] = false;
