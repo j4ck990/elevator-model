@@ -4,14 +4,14 @@
 */
 
 // LTL formulas to be verified
-//ltl p1 { []<> (floor_request_made[1]==true) } /* this property does not hold, as a request for floor 1 can be indefinitely postponed. */
+// ltl p1 { []<> (floor_request_made[1]==true) } /* this property does not hold, as a request for floor 1 can be indefinitely postponed. */
 // ltl p4 { []<>((floor_request_made[0]> 0) && (floor_request_made[1] < N))}
-// ltl p5 { [] ((cabin_door_is_open == true) && (cabin_door_is_open == false))}
-// ltl a1 { [] ((floor_request_made[1]) -> <>(floor_door_is_open[1])) }
-// ltl a2 { [] ((floor_request_made[2]) -> <>(floor_door_is_open[2])) }
+// ltl p5 { [] ((cabin_door_is_open == true) && (cabin_door_is_open == false))} // this property should never hold
+// ltl a1 { [] ((floor_request_made[1]) -> <>(current_floor==1)) }
+// ltl a2 { [] ((floor_request_made[2]) -> <>(current_floor==2)) }
 // ltl b1 { []<> (cabin_door_is_open==true) } /* this property should hold, but does not yet; at any moment during an execution, the opening of the cabin door will happen at some later point. */
 // ltl b2 { []<> (cabin_door_is_open==false) } /* this property should hold, but does not yet; at any moment during an execution, the closing of the cabin door will happen at some later point. */
-// ltl c { [] (cabin_door_is_open -> floor_door_is_open[current_floor]) }
+ltl c { [] (cabin_door_is_open -> floor_door_is_open[current_floor]) }
 
 // the number of floors
 #define N	4
@@ -95,13 +95,10 @@ active proctype main_control() {
 			do
 			:: current_floor != dest ->
 				if
-				:: direction == up ->
-					current_floor++;
-					floor_reached?true;
-				:: direction == down ->
-					current_floor--;
-					floor_reached?true;
+				:: direction == up -> current_floor++;
+				:: direction == down -> current_floor--;
 				fi
+				floor_reached?true;
 			:: current_floor == dest -> break;
 			od
 			move!false;
@@ -132,5 +129,6 @@ active [N] proctype req_button() {
 		request!reqid;
 		floor_request_made[reqid] = true;
 	  }
+		assert(0 <= reqid && reqid < N);
 	od;
 }
