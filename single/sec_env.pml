@@ -89,20 +89,24 @@ active proctype main_control() {
 	  assert(0 <= current_floor && current_floor < N);
 		assert(cabin_door_is_open == false);
 
-		move!true;
-		do
-		:: current_floor != dest ->
-			if
-			:: direction == up ->
-				current_floor++;
-				floor_reached?true;
-			:: direction == down ->
-				current_floor--;
-				floor_reached?true;
-			fi
-		:: current_floor == dest -> break;
-		od
-		move!false;
+		if 
+		:: current_floor != dest -> 
+			move!true;
+			do
+			:: current_floor != dest ->
+				if
+				:: direction == up ->
+					current_floor++;
+					floor_reached?true;
+				:: direction == down ->
+					current_floor--;
+					floor_reached?true;
+				fi
+			:: current_floor == dest -> break;
+			od
+			move!false;
+		:: else -> skip;
+		fi
 
 		direction = none;
 		update_cabin_door!true; cabin_door_updated?true;
