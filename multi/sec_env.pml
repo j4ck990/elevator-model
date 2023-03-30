@@ -4,17 +4,22 @@
 */
 
 // LTL formulas to be verified
-//ltl p1 { []<> (floor_request_made[1]==true) } /* this property does not hold, as a request for floor 1 can be indefinitely postponed. */
-ltl p2 { []<> (cabin_door_is_open==true) } /* this property should hold, but does not yet; at any moment during an execution, the opening of the cabin door will happen at some later point. */
+// ltl p1 { []<> (floor_request_made[1]==true) } /* this property does not hold, as a request for floor 1 can be indefinitely postponed. */
+// ltl p4 { []<>((floor_request_made[0]> 0) && (floor_request_made[1] < N))}
+// ltl p5 { [] ((cabin_door_is_open == true) && (cabin_door_is_open == false))} // this property should never hold
+// ltl a1 { [] ((floor_request_made[1]) -> <>(current_floor==1)) }
+// ltl a2 { [] ((floor_request_made[2]) -> <>(current_floor==2)) }
+// ltl b1 { []<> (cabin_door_is_open==true) } /* this property should hold, but does not yet; at any moment during an execution, the opening of the cabin door will happen at some later point. */
+// ltl b2 { []<> (cabin_door_is_open==false) } /* this property should hold, but does not yet; at any moment during an execution, the closing of the cabin door will happen at some later point. */
+// ltl c { [] (cabin_door_is_open -> floor_door_is_open[current_floor]) }
 
-// the number of floors
-#define N	4
 
-// the number of elevators
-#define M 2
-
-// IDs of req_button processes
-#define reqid _pid-4
+#define N 4                       // the number of floors
+#define M 2                       // the number of elevators
+#define reqid  	_pid-3*M-1  			// IDs of req_button processes
+#define cabid  	_pid
+#define elevid 	_pid-M 
+#define mcid		_pid-2*M
 
 // type for direction of elevator
 mtype { down, up, none };
@@ -24,69 +29,108 @@ chan request = [N] of { byte };
 // status of requests per floor
 bool floor_request_made[N];
 
+// status of M elevators
 typedef elevator {
-	// status of floor doors of the shaft of the single elevator
-	bool floor_door_is_open[N];
+    mtype direction = none;
+    byte current_floor;
+    bool cabin_door_is_open;
+    bool floor_door_is_open[N]; 	// status of floor doors of the shaft of the single elevator
 }
 elevator elevators[M];
 
 // status and synchronous channels for elevator cabin and engine
-byte current_floor;
-bool cabin_door_is_open;
-chan update_cabin_door = [0] of { bool };
-chan cabin_door_updated = [0] of { bool };
-chan move = [0] of { bool };
-chan floor_reached = [0] of { bool };
+chan update_cabin_door[M] = [0] of { bool };
+chan cabin_door_updated[M] = [0] of { bool };
+chan move[M] = [0] of { bool };
+chan floor_reached[M] = [0] of { bool };
 
 // synchronous channels for communication between request handler and main control
-chan go = [0] of { byte };
-chan served = [0] of { bool };
+chan go[M] = [0] of { byte };
+chan served = [M] of { byte };
 
 // cabin door process
-active proctype cabin_door() {
+active [M] proctype cabin_door() {
 	do
-	:: update_cabin_door?true -> 
-		floor_door_is_open[current_floor] = true; 
-		cabin_door_is_open = true; 
-		cabin_door_updated!true;
-	:: update_cabin_door?false -> 
-		cabin_door_is_open = false; 
-		floor_door_is_open[current_floor] = false; 
-		cabin_door_updated!false;
+	:: update_cabin_door[cabid]?true -> 
+		elevators[cabid].floor_door_is_open[elevators[cabid].current_floor] = true; 
+		elevators[cabid].cabin_door_is_open = true; 
+		cabin_door_updated[cabid]!true;
+	:: update_cabin_door[cabid]?false -> 
+		elevators[cabid].cabin_door_is_open = false; 
+		elevators[cabid].floor_door_is_open[elevators[cabid].current_floor] = false; 
+		// assert(cabin_door_is_open==floor_door_is_open[current_floor]); // assert floor door is open when cabin door is open
+		cabin_door_updated[cabid]!false;
 	od;
 }
 
 // process combining the elevator engine and sensors
 active [M] proctype elevator_engine() {
 	do
-	:: move?true ->
+	:: move[elevid]?true ->
 		do
-		:: move?false -> break;
-		:: floor_reached!true;
+		:: move[elevid]?false -> break;
+		:: floor_reached[elevid]!true;
 		od;
 	od;
 }
 
 // DUMMY main control process. Remodel it to control the doors and the engine!
-active proctype main_control() {
+active [M] proctype main_control() {
 	byte dest;
 	do
-	:: go?dest ->
-	   current_floor = dest;
+	:: go[mcid]?dest ->
+		if
+		:: dest < elevators[mcid].current_floor -> elevators[mcid].direction = down;
+		:: dest > elevators[mcid].current_floor -> elevators[mcid].direction = up;
+		:: else -> skip;
+		fi
+		
+		if
+		:: elevators[mcid].cabin_door_is_open -> update_cabin_door[mcid]!false; cabin_door_updated[mcid]?false;
+		:: else -> skip;
+		fi
 
-	   // an example assertion.
-	   assert(0 <= current_floor && current_floor < N);
+	  // an example assertion.
+	  assert(0 <= elevators[mcid].current_floor && elevators[mcid].current_floor < N);
+		assert(elevators[mcid].cabin_door_is_open == false);
 
-	   floor_request_made[dest] = false;
-	   served!true;
+		if 
+		:: elevators[mcid].current_floor != dest -> 
+			move[mcid]!true;
+			do
+			:: elevators[mcid].current_floor != dest ->
+				if
+				:: elevators[mcid].direction == up -> elevators[mcid].current_floor++;
+				:: elevators[mcid].direction == down -> elevators[mcid].current_floor--;
+				fi
+				floor_reached[mcid]?true;
+			:: elevators[mcid].current_floor == dest -> break;
+			od
+			move[mcid]!false;
+		:: else -> skip;
+		fi
+
+		elevators[mcid].direction = none;
+		update_cabin_door[mcid]!true; cabin_door_updated[mcid]?true;
+
+	  floor_request_made[dest] = false;
+	  served!mcid;
 	od;
 }
 
 // request handler process. Remodel this process to serve M elevators!
 active proctype req_handler() {
 	byte dest;
+	byte count=0;
+	byte id;
 	do
-	:: request?dest -> go!dest; served?true;
+	:: count < M -> 
+		served!count;
+		count++;
+	:: count == M -> break;
+	od
+	do
+	:: request?dest -> served?id; go[id]!dest;
 	od;
 }
 
