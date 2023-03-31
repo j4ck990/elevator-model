@@ -9,17 +9,24 @@
 // ltl p5 { [] ((cabin_door_is_open == true) && (cabin_door_is_open == false))} // this property should never hold
 // ltl a1 { [] ((floor_request_made[1]) -> <>(current_floor==1)) }
 // ltl a2 { [] ((floor_request_made[2]) -> <>(current_floor==2)) }
-// ltl b1 { []<> (cabin_door_is_open==true) } /* this property should hold, but does not yet; at any moment during an execution, the opening of the cabin door will happen at some later point. */
-// ltl b2 { []<> (cabin_door_is_open==false) } /* this property should hold, but does not yet; at any moment during an execution, the closing of the cabin door will happen at some later point. */
+// ltl b1 { []<> (elevators[0].cabin_door_is_open==true) } /* this property should hold, but does not yet; at any moment during an execution, the opening of the cabin door will happen at some later point. */
+// ltl b2 { []<> (elevators[0].cabin_door_is_open==false) } /* this property should hold, but does not yet; at any moment during an execution, the closing of the cabin door will happen at some later point. */
 // ltl c { [] (cabin_door_is_open -> floor_door_is_open[current_floor]) }
+// ltl e { [] ((floor_request_made[0]) -> <>(!floor_request_made[0])) }
+// ltl f { [] (<>(f==0) && <>(f==1) && <>(f==2)) }
+ltl h { []<> (floor_request_made[h]) }
 
 
-#define N 4                       // the number of floors
-#define M 2                       // the number of elevators
+#define N 3                       // the number of floors
+#define M 3                       // the number of elevators
+#define cabid  	_pid							// IDs of cabin doors
+#define elevid 	_pid-M 						// IDs of elevator engines
+#define mcid		_pid-2*M					// IDs of main controls
 #define reqid  	_pid-3*M-1  			// IDs of req_button processes
-#define cabid  	_pid
-#define elevid 	_pid-M 
-#define mcid		_pid-2*M
+
+// Variables for LTL
+byte f;
+byte h=N-1;
 
 // type for direction of elevator
 mtype { down, up, none };
@@ -115,6 +122,7 @@ active [M] proctype main_control() {
 
 	  floor_request_made[dest] = false;
 	  served!mcid;
+		assert(elevators[mcid].current_floor == dest);
 	od;
 }
 
@@ -130,7 +138,10 @@ active proctype req_handler() {
 	:: count == M -> break;
 	od
 	do
-	:: request?dest -> served?id; go[id]!dest;
+	:: request?dest -> 
+		served?id; 
+		f=id;
+		go[id]!dest;
 	od;
 }
 

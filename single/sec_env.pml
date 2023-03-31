@@ -5,7 +5,6 @@
 
 // LTL formulas to be verified
 // ltl p1 { []<> (floor_request_made[1]==true) } /* this property does not hold, as a request for floor 1 can be indefinitely postponed. */
-// ltl p4 { []<>((floor_request_made[0]> 0) && (floor_request_made[1] < N))}
 // ltl p5 { [] ((cabin_door_is_open == true) && (cabin_door_is_open == false))} // this property should never hold
 // ltl a1 { [] ((floor_request_made[1]) -> <>(current_floor==1)) }
 // ltl a2 { [] ((floor_request_made[2]) -> <>(current_floor==2)) }
@@ -48,11 +47,11 @@ active proctype cabin_door() {
 	:: update_cabin_door?true -> 
 		floor_door_is_open[current_floor] = true; 
 		cabin_door_is_open = true; 
+		assert(cabin_door_is_open==floor_door_is_open[current_floor]); // assert floor door is open when cabin door is open
 		cabin_door_updated!true;
 	:: update_cabin_door?false -> 
 		cabin_door_is_open = false; 
 		floor_door_is_open[current_floor] = false; 
-		// assert(cabin_door_is_open==floor_door_is_open[current_floor]); // assert floor door is open when cabin door is open
 		cabin_door_updated!false;
 	od;
 }
