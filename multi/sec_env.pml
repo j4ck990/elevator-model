@@ -122,6 +122,7 @@ active [M] proctype main_control() {
 
 	  floor_request_made[dest] = false;
 	  served!mcid;
+		f=mcid;				// (f) LTL variables
 		assert(elevators[mcid].current_floor == dest); 	// (g) assert current floor is equal to the destination floor of the request
 	od;
 }
@@ -140,7 +141,6 @@ active proctype req_handler() {
 	do
 	:: request?dest -> 
 		served?id; 
-		f=id;				// (f) LTL variable
 		go[id]!dest;
 	od;
 }

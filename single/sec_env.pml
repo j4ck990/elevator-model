@@ -10,7 +10,7 @@
 // ltl a2 { [] ((floor_request_made[2]) -> <>(current_floor==2)) }
 // ltl b1 { []<> (cabin_door_is_open==true) } /* this property should hold, but does not yet; at any moment during an execution, the opening of the cabin door will happen at some later point. */
 // ltl b2 { []<> (cabin_door_is_open==false) } /* this property should hold, but does not yet; at any moment during an execution, the closing of the cabin door will happen at some later point. */
-ltl c { [] (cabin_door_is_open -> floor_door_is_open[current_floor]) }
+// ltl c { [] (cabin_door_is_open -> floor_door_is_open[current_floor]) }
 
 // the number of floors
 #define N	4
