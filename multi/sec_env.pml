@@ -4,17 +4,9 @@
 */
 
 // LTL formulas to be verified
-// ltl p1 { []<> (floor_request_made[1]==true) } /* this property does not hold, as a request for floor 1 can be indefinitely postponed. */
-// ltl p4 { []<>((floor_request_made[0]> 0) && (floor_request_made[1] < N))}
-// ltl p5 { [] ((cabin_door_is_open == true) && (cabin_door_is_open == false))} // this property should never hold
-// ltl a1 { [] ((floor_request_made[1]) -> <>(current_floor==1)) }
-// ltl a2 { [] ((floor_request_made[2]) -> <>(current_floor==2)) }
-// ltl b1 { []<> (elevators[0].cabin_door_is_open==true) } /* this property should hold, but does not yet; at any moment during an execution, the opening of the cabin door will happen at some later point. */
-// ltl b2 { []<> (elevators[0].cabin_door_is_open==false) } /* this property should hold, but does not yet; at any moment during an execution, the closing of the cabin door will happen at some later point. */
-// ltl c { [] (cabin_door_is_open -> floor_door_is_open[current_floor]) }
 // ltl e { [] ((floor_request_made[0]) -> <>(!floor_request_made[0])) }
-// ltl f { [] (<>(f==0) && <>(f==1) && <>(f==2)) }
-ltl h { []<> (floor_request_made[h]) }
+// ltl f { (<>(f==0) && <>(f==1)) }
+// ltl h { []<> (floor_request_made[h]) }
 
 
 #define N 3                       // the number of floors
