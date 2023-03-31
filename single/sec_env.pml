@@ -47,7 +47,7 @@ active proctype cabin_door() {
 	:: update_cabin_door?true -> 
 		floor_door_is_open[current_floor] = true; 
 		cabin_door_is_open = true; 
-		assert(cabin_door_is_open==floor_door_is_open[current_floor]); // assert floor door is open when cabin door is open
+		assert(cabin_door_is_open==floor_door_is_open[current_floor]); // (c) assert floor door is open when cabin door is open 
 		cabin_door_updated!true;
 	:: update_cabin_door?false -> 
 		cabin_door_is_open = false; 
@@ -85,7 +85,7 @@ active proctype main_control() {
 		fi
 
 	  // an example assertion.
-	  assert(0 <= current_floor && current_floor < N);
+	  assert(0 <= current_floor && current_floor < N); 
 		assert(cabin_door_is_open == false);
 
 		if 
@@ -128,6 +128,6 @@ active [N] proctype req_button() {
 		request!reqid;
 		floor_request_made[reqid] = true;
 	  }
-		assert(0 <= reqid && reqid < N);
+		assert(0 <= reqid && reqid < N); // (d) assert request is always for a valid floor
 	od;
 }
